@@ -57,6 +57,10 @@ app.get("/scrape", function(req, res) {
         // In the currently selected element, look at its child elements (i.e., its a-tags),
         // then save the values for any "href" attributes that the child elements may have
         result.link = $(this).find("a").attr("href");
+
+        result.author = $(this).find(".listed-article-author").text();
+
+        result.image = $(this).find("img").attr("src");
     
         // Save these results in an object that we'll push into the results array we defined earlier
     //     results.push({
