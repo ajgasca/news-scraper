@@ -3,6 +3,7 @@ var logger = require("morgan");
 var mongoose = require("mongoose");
 var exphbs = require("express-handlebars");
 
+
 // Our scraping tools
 // Axios is a promised-based http library, similar to jQuery's Ajax method
 // It works on the client and on the server
@@ -39,6 +40,9 @@ app.engine(
 mongoose.connect("mongodb://localhost/entertainmentNewsDB", { useNewUrlParser: true });
 
 // Routes
+app.get("/", function(req, res) {
+    res.render("index");
+});
 
 // A GET route for scraping the echoJS website
 app.get("/scrape", function(req, res) {
@@ -67,7 +71,7 @@ app.get("/scrape", function(req, res) {
     //       title: title,
     //       link: link
     //     });
-        console.log(result);
+    
       //Create a new Article using the `result` object built from scraping
       db.Article.create(result)
         .then(function(dbArticle) {
@@ -123,7 +127,7 @@ app.post("/articles/:id", function(req, res) {
       // If a Note was created successfully, find one Article with an `_id` equal to `req.params.id`. Update the Article to be associated with the new Note
       // { new: true } tells the query that we want it to return the updated User -- it returns the original by default
       // Since our mongoose query returns a promise, we can chain another `.then` which receives the result of the query
-      return db.Article.findOneAndUpdate({ _id: req.params.id }, { comment: dbComment._id }, { new: true });
+      return db.Article.findOneAndUpdate({ _id: req.params.id }, { $push: {'comment': dbComment._id }}, { new: true });
     })
     .then(function(dbArticle) {
       // If we were able to successfully update an Article, send it back to the client
@@ -134,6 +138,23 @@ app.post("/articles/:id", function(req, res) {
       res.json(err);
     });
 });
+
+app.delete("/notes/:id", function(req, res){
+    console.log("this is the id: " + req.params.id)
+    idArr = req.params.id.split(",");
+    console.log("id Array: " + idArr)
+    db.Note.remove({"_id": idArr[0]})
+    .then(function(){
+      return  db.Article.update({"_id": idArr[1]},{ $pull: {'note': idArr[0]}})
+    })
+    .then(function(dbArticle){
+      res.json(dbArticle)
+    })
+    .catch(function(err){
+      res.json(err);
+    })
+  })
+
 
 // Start the server
 app.listen(PORT, function() {
